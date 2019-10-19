@@ -8,13 +8,25 @@
 */
 
 import React from 'react';
-import { StyleSheet, Text, View, SafeAreaView } from 'react-native';
-import { Images, Colors } from './App/Themes'
-import APIRequest from './App/Config/APIRequest'
+import { StyleSheet,
+         Text, View, SafeAreaView, StatusBar, Platform, Dimensions, Image,
+         TextInput, TouchableOpacity, FlatList, ActivityIndicator, Keyboard, TouchableWithoutFeedback} from 'react-native';
+import { Images, Colors } from './App/Themes';
+import APIRequest from './App/Config/APIRequest';
+import News from './App/Components/News';
+import Search from './App/Components/Search';
 
-import News from './App/Components/News'
-import Search from './App/Components/Search'
 
+const DismissKeyboard = ({children}) => {
+  return (
+    <TouchableWithoutFeedback onPress = {() => Keyboard.dismiss()}>
+      {children}
+    </TouchableWithoutFeedback>
+  );
+}
+
+var { height, width } = Dimensions.get('window');
+var statusBarHeight = StatusBar.currentHeight;
 export default class App extends React.Component {
 
   state = {
@@ -24,10 +36,13 @@ export default class App extends React.Component {
     category: ''
   }
 
-  componentDidMount() {
+  addTodoTimed = () => {
+    this.setState({articles: this.state.articles});
+  }
 
+  componentDidMount() {
     //uncomment this to run an API query!
-    //this.loadArticles();
+    this.loadArticles();
   }
 
   async loadArticles(searchTerm = '', category = '') {
@@ -42,25 +57,43 @@ export default class App extends React.Component {
     this.setState({loading: false, articles: resultArticles})
   }
 
-  render() {
+  onSearch = (search) => {
+    this.loadArticles(search)
+    this.setState({searchText:search});
+  }
+  getArticleContent = () => {
     const {articles, loading} = this.state;
+    let contentDisplayed = null;
+    if(loading){
+      contentDisplayed = <ActivityIndicator size = "large" color ="black"></ActivityIndicator>;
+    } else {
+      contentDisplayed = <News articles = {this.state.articles}></News>;
+    }
+    return (<View style = {{flex:1, width:'95%',flexDirection:'column',alignItems:'center',justifyContent: 'center'}}>
+              {contentDisplayed}
+            </View>);
+  }
 
+  render() {
     return (
+      <DismissKeyboard>
       <SafeAreaView style={styles.container}>
+        {/*NYT LOGO*/}
 
-        <Text style={{textAlign: 'center'}}>Have fun! :) {"\n"} Start by changing the API Key in "./App/Config/AppConfig.js" {"\n"} Then, take a look at the following components: {"\n"} NavigationButtons {"\n"} Search {"\n"} News {"\n"} 🔥</Text>
+        <Image
+          style = {{height:width*0.2, width:width,
+                    marginTop: Platform.OS === 'android' ? statusBarHeight : 0}}
+          source = {require("./App/Images/nyt.png")}
+          resizeMode = 'contain'
+        />
 
-        {/*First, you'll need a logo*/}
+        {/*Search Bar*/}
+        <Search onSearch = {this.onSearch}/>
 
-        {/*Then your search bar*/}
-
-        {/*And some news*/}
-
-        {/*Though, you can style and organize these however you want! power to you 😎*/}
-
-        {/*If you want to return custom stuff from the NYT API, checkout the APIRequest file!*/}
-
+        {/*Article List*/}
+        {this.getArticleContent()}
       </SafeAreaView>
+      </DismissKeyboard>
     );
   }
 }
@@ -68,8 +101,10 @@ export default class App extends React.Component {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: 'column',
     backgroundColor: '#fff',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center'
-  }
+  },
+
 });
